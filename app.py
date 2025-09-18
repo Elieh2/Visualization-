@@ -79,7 +79,8 @@ st.markdown("""
 @st.cache_data
 def load_and_prepare_data():
     # Load the dataset
-    df = pd.read_csv('C:/Users/User/OneDrive/Desktop/766496d731ca34aa96a88c60f595617f_20240906_113458.csv')
+    df = pd.read_csv("766496d731ca34aa96a88c60f595617f_20240906_113458.csv")
+
 
     # Clean column names by stripping whitespace
     df.columns = df.columns.str.strip()
