@@ -81,15 +81,8 @@ def load_and_prepare_data():
     # Load the dataset
     df = pd.read_csv("766496d731ca34aa96a88c60f595617f_20240906_113458.csv")
 
-    # Display available columns for debugging
-    st.write("Available columns in the dataset:")
-    st.write(df.columns.tolist())
-    
     # Clean column names by stripping whitespace
     df.columns = df.columns.str.strip()
-    
-    st.write("Columns after stripping whitespace:")
-    st.write(df.columns.tolist())
 
     # Data cleaning and preparation
     # Convert relevant columns to numeric, handling errors
@@ -108,21 +101,12 @@ def load_and_prepare_data():
     for col in numeric_columns:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
-        else:
-            st.warning(f"Column '{col}' not found in dataset")
 
     # Check what refArea column contains and extract district
     if 'refArea' in df.columns:
-        st.write("Sample refArea values:")
-        st.write(df['refArea'].head(10))
-        
-        # Extract district from refArea - let's see what the pattern is
+        # Extract district from refArea
         df['District'] = df['refArea'].apply(lambda x: str(x).split('/')[-1].replace('_', ' ').title())
-        
-        st.write("Extracted District values:")
-        st.write(df['District'].unique())
     else:
-        st.error("refArea column not found in dataset")
         # Create a dummy District column for testing
         df['District'] = 'Unknown'
 
@@ -261,7 +245,6 @@ try:
 
     district_summary['Resource Coverage (%)'] = (district_summary['Towns with Resources'] / district_summary['Total Towns'] * 100).round(1)
 except Exception as e:
-    st.error(f"Error creating district summary: {e}")
     # Create empty summary
     district_summary = pd.DataFrame(columns=[
         'District', 'Towns with Resources', 'Public Schools', 
@@ -355,7 +338,6 @@ if len(filtered_df) > 0:
 
         filtered_district_summary['Resource Coverage (%)'] = (filtered_district_summary['Towns with Resources'] / filtered_district_summary['Total Towns'] * 100).round(1)
     except Exception as e:
-        st.error(f"Error creating filtered district summary: {e}")
         filtered_district_summary = pd.DataFrame()
 else:
     filtered_district_summary = pd.DataFrame()
