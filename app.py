@@ -102,21 +102,21 @@ def load_and_prepare_data():
     for col in numeric_columns:
         df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
 
-    # Extract governorate from refArea
-    df['Governorate'] = df['refArea'].apply(lambda x: x.split('/')[-1].replace('_', ' ').title())
+    # Extract district from refArea
+    df['District'] = df['refArea'].apply(lambda x: x.split('/')[-1].replace('_', ' ').title())
 
-    # Clean governorate names
-    governorate_mapping = {
-        'Mount Lebanon Governorate': 'Mount Lebanon',
-        'South Governorate': 'South',
-        'Akkar Governorate': 'Akkar',
-        'North Governorate': 'North',
-        'Nabatieh Governorate': 'Nabatieh',
-        'Beqaa Governorate': 'Beqaa',
-        'Baalbek-Hermel Governorate': 'Baalbek-Hermel'
+    # Clean district names
+    district_mapping = {
+        'Mount Lebanon District': 'Mount Lebanon',
+        'South District': 'South',
+        'Akkar District': 'Akkar',
+        'North District': 'North',
+        'Nabatieh District': 'Nabatieh',
+        'Beqaa District': 'Beqaa',
+        'Baalbek-Hermel District': 'Baalbek-Hermel'
     }
 
-    df['Governorate'] = df['Governorate'].replace(governorate_mapping)
+    df['District'] = df['District'].replace(district_mapping)
 
     # FEATURE ENGINEERING SECTION
     # 1. Calculate total educational resources per town
@@ -191,8 +191,8 @@ def load_and_prepare_data():
 # Load data
 df = load_and_prepare_data()
 
-# Create summary statistics by governorate
-gov_summary = df.groupby('Governorate').agg({
+# Create summary statistics by district
+district_summary = df.groupby('District').agg({
     'Existence of educational resources - exists': 'sum',
     'Type and size of educational resources - public schools': 'sum',
     'Type and size of educational resources - private schools': 'sum',
@@ -205,13 +205,13 @@ gov_summary = df.groupby('Governorate').agg({
     'Resource Density (per 1000 people)': 'mean'
 }).reset_index()
 
-gov_summary.columns = [
-    'Governorate', 'Towns with Resources', 'Public Schools', 
+district_summary.columns = [
+    'District', 'Towns with Resources', 'Public Schools', 
     'Private Schools', 'Universities', 'Vocational Institutes', 'Total Towns',
     'Total Resources', 'Total Population', 'Avg Education Index', 'Avg Resource Density'
 ]
 
-gov_summary['Resource Coverage (%)'] = (gov_summary['Towns with Resources'] / gov_summary['Total Towns'] * 100).round(1)
+district_summary['Resource Coverage (%)'] = (district_summary['Towns with Resources'] / district_summary['Total Towns'] * 100).round(1)
 
 # Dashboard Header
 st.markdown('<h1 class="main-header">🏫 Lebanon Education Resources Dashboard</h1>', unsafe_allow_html=True)
@@ -220,12 +220,12 @@ st.markdown('<h1 class="main-header">🏫 Lebanon Education Resources Dashboard<
 st.sidebar.markdown("## 🔍 Dashboard Filters")
 st.sidebar.markdown('<div class="filter-section">', unsafe_allow_html=True)
 
-# Governorate filter
-selected_governorates = st.sidebar.multiselect(
-    "Select Governorates:",
-    options=df['Governorate'].unique(),
-    default=df['Governorate'].unique(),
-    help="Choose which governorates to display in the analysis"
+# District filter
+selected_districts = st.sidebar.multiselect(
+    "Select Districts:",
+    options=df['District'].unique(),
+    default=df['District'].unique(),
+    help="Choose which districts to display in the analysis"
 )
 
 # Resource threshold filter
@@ -265,7 +265,7 @@ min_edu, max_edu = st.sidebar.slider(
 st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
 # Apply filters
-filtered_df = df[df['Governorate'].isin(selected_governorates)]
+filtered_df = df[df['District'].isin(selected_districts)]
 filtered_df = filtered_df[filtered_df['Total Educational Resources'] >= min_resources]
 filtered_df = filtered_df[filtered_df['Education Index'].between(min_edu, max_edu)]
 
@@ -275,9 +275,9 @@ if selected_dominant != 'All':
 if selected_area != 'All':
     filtered_df = filtered_df[filtered_df['Area Type'] == selected_area]
 
-# Create summary by governorate for filtered data
+# Create summary by district for filtered data
 if len(filtered_df) > 0:
-    filtered_gov_summary = filtered_df.groupby('Governorate').agg({
+    filtered_district_summary = filtered_df.groupby('District').agg({
         'Existence of educational resources - exists': 'sum',
         'Type and size of educational resources - public schools': 'sum',
         'Type and size of educational resources - private schools': 'sum',
@@ -290,17 +290,17 @@ if len(filtered_df) > 0:
         'Resource Density (per 1000 people)': 'mean'
     }).reset_index()
 
-    filtered_gov_summary.columns = [
-        'Governorate', 'Towns with Resources', 'Public Schools', 
+    filtered_district_summary.columns = [
+        'District', 'Towns with Resources', 'Public Schools', 
         'Private Schools', 'Universities', 'Vocational Institutes', 'Total Towns',
         'Total Resources', 'Total Population', 'Avg Education Index', 'Avg Resource Density'
     ]
 
-    filtered_gov_summary['Resource Coverage (%)'] = (filtered_gov_summary['Towns with Resources'] / filtered_gov_summary['Total Towns'] * 100).round(1)
+    filtered_district_summary['Resource Coverage (%)'] = (filtered_district_summary['Towns with Resources'] / filtered_district_summary['Total Towns'] * 100).round(1)
 else:
     # Create empty summary if no data
-    filtered_gov_summary = pd.DataFrame(columns=[
-        'Governorate', 'Towns with Resources', 'Public Schools', 
+    filtered_district_summary = pd.DataFrame(columns=[
+        'District', 'Towns with Resources', 'Public Schools', 
         'Private Schools', 'Universities', 'Vocational Institutes', 'Total Towns',
         'Total Resources', 'Resource Coverage (%)'
     ])
@@ -321,7 +321,7 @@ with col1:
     """, unsafe_allow_html=True)
 
 with col2:
-    avg_coverage = filtered_gov_summary['Resource Coverage (%)'].mean() if len(filtered_gov_summary) > 0 else 0
+    avg_coverage = filtered_district_summary['Resource Coverage (%)'].mean() if len(filtered_district_summary) > 0 else 0
     st.markdown(f"""
     <div class="metric-container">
         <h3>📈 Avg Coverage</h3>
@@ -331,17 +331,17 @@ with col2:
     """, unsafe_allow_html=True)
 
 with col3:
-    if len(filtered_gov_summary) > 0:
-        top_governorate = filtered_gov_summary.loc[filtered_gov_summary['Resource Coverage (%)'].idxmax(), 'Governorate']
-        top_value = filtered_gov_summary.loc[filtered_gov_summary['Resource Coverage (%)'].idxmax(), 'Resource Coverage (%)']
+    if len(filtered_district_summary) > 0:
+        top_district = filtered_district_summary.loc[filtered_district_summary['Resource Coverage (%)'].idxmax(), 'District']
+        top_value = filtered_district_summary.loc[filtered_district_summary['Resource Coverage (%)'].idxmax(), 'Resource Coverage (%)']
     else:
-        top_governorate = 'N/A'
+        top_district = 'N/A'
         top_value = 0
         
     st.markdown(f"""
     <div class="metric-container">
         <h3>🏆 Top Performer</h3>
-        <h2>{top_governorate}</h2>
+        <h2>{top_district}</h2>
         <p>{top_value:.1f}% coverage</p>
     </div>
     """, unsafe_allow_html=True)
@@ -349,23 +349,23 @@ with col3:
 # Main visualizations
 st.markdown("---")
 
-# Visualization 1: Bar Chart - Educational Resource Coverage by Governorate (EXACT COPY from your original code)
-if len(filtered_gov_summary) > 0:
-    st.markdown("## 📊 Educational Resource Coverage by Governorate")
+# Visualization 1: Bar Chart - Educational Resource Coverage by District (EXACT COPY from your original code)
+if len(filtered_district_summary) > 0:
+    st.markdown("## 📊 Educational Resource Coverage by District")
     
     # EXACT same chart as your original code - Visualization 1
     fig1 = px.bar(
-        filtered_gov_summary, 
-        x='Governorate', 
+        filtered_district_summary, 
+        x='District', 
         y='Resource Coverage (%)',
-        title='Educational Resource Coverage by Governorate',
-        color='Governorate',
+        title='Educational Resource Coverage by District',
+        color='District',
         text='Resource Coverage (%)',
         color_discrete_sequence=px.colors.qualitative.Set3
     )
 
     fig1.update_layout(
-        xaxis_title="Governorate",
+        xaxis_title="District",
         yaxis_title="Percentage of Towns with Educational Resources",
         showlegend=False,
         yaxis=dict(range=[0, 100])
@@ -375,36 +375,36 @@ if len(filtered_gov_summary) > 0:
     st.plotly_chart(fig1, use_container_width=True)
 
     # Insights for Chart 1
-    max_coverage = filtered_gov_summary['Resource Coverage (%)'].max()
-    min_coverage = filtered_gov_summary['Resource Coverage (%)'].min()
-    max_gov = filtered_gov_summary.loc[filtered_gov_summary['Resource Coverage (%)'].idxmax(), 'Governorate']
-    min_gov = filtered_gov_summary.loc[filtered_gov_summary['Resource Coverage (%)'].idxmin(), 'Governorate']
+    max_coverage = filtered_district_summary['Resource Coverage (%)'].max()
+    min_coverage = filtered_district_summary['Resource Coverage (%)'].min()
+    max_district = filtered_district_summary.loc[filtered_district_summary['Resource Coverage (%)'].idxmax(), 'District']
+    min_district = filtered_district_summary.loc[filtered_district_summary['Resource Coverage (%)'].idxmin(), 'District']
     
     st.markdown(f"""
     <div class="insight-box">
         <h3>🔍 Key Insights - Resource Coverage</h3>
         <ul>
-            <li><strong>Coverage Range:</strong> Resource coverage ranges from {min_coverage}% in {min_gov} to {max_coverage}% in {max_gov}</li>
-            <li><strong>Performance Gap:</strong> There's a {max_coverage - min_coverage:.1f} percentage point difference between the highest and lowest performing governorates</li>
-            <li><strong>Average Coverage:</strong> The average resource coverage across selected governorates is {filtered_gov_summary['Resource Coverage (%)'].mean():.1f}%</li>
-            <li><strong>Policy Focus:</strong> {min_gov} may need targeted investment to improve educational resource coverage</li>
+            <li><strong>Coverage Range:</strong> Resource coverage ranges from {min_coverage}% in {min_district} to {max_coverage}% in {max_district}</li>
+            <li><strong>Performance Gap:</strong> There's a {max_coverage - min_coverage:.1f} percentage point difference between the highest and lowest performing districts</li>
+            <li><strong>Average Coverage:</strong> The average resource coverage across selected districts is {filtered_district_summary['Resource Coverage (%)'].mean():.1f}%</li>
+            <li><strong>Policy Focus:</strong> {min_district} may need targeted investment to improve educational resource coverage</li>
         </ul>
     </div>
     """, unsafe_allow_html=True)
 
 # Visualization 2: Scatter Plot - EXACT REPLICA of your original code (3rd visualization)
-if len(filtered_gov_summary) > 0:
+if len(filtered_district_summary) > 0:
     st.markdown("## 🏫 Public vs Private Schools Distribution")
 
     # EXACT same chart as your original code - Visualization 3
     fig2 = px.scatter(
-        filtered_gov_summary,
+        filtered_district_summary,
         x='Public Schools',
         y='Private Schools',
         size='Total Towns',
-        color='Governorate',
-        title='Public vs Private Schools Distribution by Governorate',
-        hover_name='Governorate',
+        color='District',
+        title='Public vs Private Schools Distribution by District',
+        hover_name='District',
         size_max=60,
         labels={
             'Public Schools': 'Number of Public Schools',
@@ -420,13 +420,13 @@ if len(filtered_gov_summary) > 0:
     st.plotly_chart(fig2, use_container_width=True)
 
     # Dynamic insights based on filtered data
-    total_public = filtered_gov_summary['Public Schools'].sum() if len(filtered_gov_summary) > 0 else 0
-    total_private = filtered_gov_summary['Private Schools'].sum() if len(filtered_gov_summary) > 0 else 0
+    total_public = filtered_district_summary['Public Schools'].sum() if len(filtered_district_summary) > 0 else 0
+    total_private = filtered_district_summary['Private Schools'].sum() if len(filtered_district_summary) > 0 else 0
     public_private_ratio = f"{total_public}/{total_private}" if total_private > 0 else f"{total_public}/0"
     
-    if len(filtered_gov_summary) > 0:
-        public_leader = filtered_gov_summary.loc[filtered_gov_summary['Public Schools'].idxmax(), 'Governorate']
-        private_leader = filtered_gov_summary.loc[filtered_gov_summary['Private Schools'].idxmax(), 'Governorate']
+    if len(filtered_district_summary) > 0:
+        public_leader = filtered_district_summary.loc[filtered_district_summary['Public Schools'].idxmax(), 'District']
+        private_leader = filtered_district_summary.loc[filtered_district_summary['Private Schools'].idxmax(), 'District']
     else:
         public_leader = 'N/A'
         private_leader = 'N/A'
@@ -438,8 +438,8 @@ if len(filtered_gov_summary) > 0:
             <li><strong>Selected Areas Ratio:</strong> {public_private_ratio} (Public/Private schools)</li>
             <li><strong>Public School Concentration:</strong> {public_leader} leads in public schools</li>
             <li><strong>Private School Hub:</strong> {private_leader} has most private schools</li>
-            <li><strong>Bubble Size Meaning:</strong> Larger bubbles = more towns in that governorate</li>
-            <li><strong>Correlation:</strong> {'Positive' if filtered_gov_summary['Public Schools'].corr(filtered_gov_summary['Private Schools']) > 0 else 'Negative'} correlation between public and private schools</li>
+            <li><strong>Bubble Size Meaning:</strong> Larger bubbles = more towns in that district</li>
+            <li><strong>Correlation:</strong> {'Positive' if filtered_district_summary['Public Schools'].corr(filtered_district_summary['Private Schools']) > 0 else 'Negative'} correlation between public and private schools</li>
         </ul>
     </div>
     """, unsafe_allow_html=True)
